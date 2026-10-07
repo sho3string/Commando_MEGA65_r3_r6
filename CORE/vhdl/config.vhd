@@ -493,7 +493,7 @@ type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 2**OPTM_GTC-
                                              OPTM_G_GAP_DSWA7  + OPTM_G_SINGLESEL,              
                                              OPTM_G_GAP_DSWB0  + OPTM_G_SINGLESEL + OPTM_G_STDSEL,                  
                                              OPTM_G_GAP_DSWB1  + OPTM_G_SINGLESEL + OPTM_G_STDSEL,                     
-                                             OPTM_G_GAP_DSWB2  + OPTM_G_SINGLESEL + OPTM_G_STDSEL,                            
+                                             OPTM_G_GAP_DSWB2  + OPTM_G_SINGLESEL,                            
                                              OPTM_G_GAP_DSWB3  + OPTM_G_SINGLESEL,                   
                                              OPTM_G_GAP_DSWB4  + OPTM_G_SINGLESEL,
                                              OPTM_G_GAP_DSWB5  + OPTM_G_SINGLESEL,

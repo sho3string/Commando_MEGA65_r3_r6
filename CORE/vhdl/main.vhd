@@ -77,7 +77,7 @@ entity main is
       dn_data_i               : in  std_logic_vector(7 downto 0);
       dn_wr_i                 : in  std_logic;
       
-      
+      video_flip_o            : out std_logic;
       osm_control_i           : in  std_logic_vector(255 downto 0)
    );
 end entity main;
@@ -244,15 +244,14 @@ begin
     cen1p5 <= cen_bus(3);
 
     video_ce_o <= cen6;
+    
+    video_flip_o <= dip_flip;
 
     prog_addr <= std_logic_vector(resize(unsigned(dn_addr_i), prog_addr'length) - to_unsigned(C_PROM_START, prog_addr'length));
     prog_data <= dn_data_i;
     prom_we <= dn_wr_i when unsigned(dn_addr_i) >= C_PROM_START and unsigned(dn_addr_i) < C_ROM_END else '0';
     
-    dn_main_we <= dn_wr_i
-       when unsigned(dn_addr_i) >= C_MAIN_START and
-            unsigned(dn_addr_i) <  C_SND_START
-       else '0';
+    dn_main_we <= dn_wr_i when unsigned(dn_addr_i) >= C_MAIN_START and unsigned(dn_addr_i) <  C_SND_START else '0';
 
     dn_snd_we <= dn_wr_i when unsigned(dn_addr_i) >= C_SND_START and unsigned(dn_addr_i) <  C_CHAR_START else '0';
     dn_char_lo_we <= dn_wr_i when unsigned(dn_addr_i) >= C_CHAR_START and unsigned(dn_addr_i) <  C_OBJ_START and dn_addr_i(0) = '0' else '0';
@@ -464,7 +463,7 @@ begin
        -- DIP switches
        dipsw       => cm_dipsw,
        dip_pause   => keyboard_n(m65_capslock),-- '1',     -- pause is active low, active high run
-       dip_flip    => open,
+       dip_flip    => dip_flip,
     
        -- Video
        
@@ -527,8 +526,8 @@ begin
    -- Use the audio mixer
     i_audio_mixer : entity work.jtframe_mixer
     generic map (
-       W0   => 10,
-       W1   => 10,
+       W0   => 11,
+       W1   => 11,
        W2   => 16,
        W3   => 16,
        WOUT => 16
@@ -545,8 +544,8 @@ begin
     
        gain0 => x"10",
        gain1 => x"10",
-       gain2 => x"20",
-       gain3 => x"20",
+       gain2 => x"10",
+       gain3 => x"10",
     
        mixed => audio_mixed,
        peak  => open
