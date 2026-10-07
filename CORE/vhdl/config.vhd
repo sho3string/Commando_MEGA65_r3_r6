@@ -368,22 +368,22 @@ constant OPTM_ITEMS : string :=
    " Game Setup\n"          &
    "\n"                     & 
    " DSW A & B\n"           &
-   " SW1-1  Service Mode \n"&
-   " SW1-2  Freeze\n"       &
-   " SW1-3  Language\n"     &
-   " SW1-4  2 Players\n"    &
-   " SW1-5  Lives A\n"      &
-   " SW1-6  Lives B\n"      &
-   " SW1-7  Bonus Life A\n" &
-   " SW1-8  Bonus Life B\n" &
-   " SW2-1  Demo Sounds\n"  &
-   " SW2-2  Continue\n"     &
-   " SW2-3  Coin B\n"       &
-   " SW2-4  Coin B\n"       &
-   " SW2-5  Coin B\n"       &
-   " SW2-6  Coin A\n"       &
-   " SW2-7  Coin A\n"       &
-   " SW2-8  Coin A\n"       &
+   " SW1-1 Coin A\n"        &
+   " SW1-2 Coin A\n"        &
+   " SW1-3 Coin B\n"        &
+   " SW1-4 Coin B\n"        &
+   " SW1-5 Lives\n"         &
+   " SW1-6 Lives\n"         &
+   " SW1-7 Starting Area\n" &
+   " SW1-8 Starting Area\n" &
+   " SW2-1 Cabinet\n"       &
+   " SW2-2 Cabinet\n"       &
+   " SW2-3 Flip Screen\n"   &
+   " SW2-4 Difficulty\n"    &
+   " SW2-5 Demo Sounds\n"   &
+   " SW2-6 Bonus Life\n"    &
+   " SW2-7 Bonus Life\n"    &
+   " SW2-8 Bonus Life\n"    &
    "\n"                     &
    " Back to main menu\n"   &
    "\n"                     &
@@ -485,24 +485,24 @@ type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 2**OPTM_GTC-
                                              OPTM_G_SUBMENU,                                                                                       
                                              OPTM_G_GAP_DSWA0  + OPTM_G_SINGLESEL,                  
                                              OPTM_G_GAP_DSWA1  + OPTM_G_SINGLESEL,                 
-                                             OPTM_G_GAP_DSWA2  + OPTM_G_SINGLESEL + OPTM_G_STDSEL,     -- Japanese/English                 
+                                             OPTM_G_GAP_DSWA2  + OPTM_G_SINGLESEL,            
                                              OPTM_G_GAP_DSWA3  + OPTM_G_SINGLESEL,                    
                                              OPTM_G_GAP_DSWA4  + OPTM_G_SINGLESEL,                 
                                              OPTM_G_GAP_DSWA5  + OPTM_G_SINGLESEL,                
                                              OPTM_G_GAP_DSWA6  + OPTM_G_SINGLESEL,                  
                                              OPTM_G_GAP_DSWA7  + OPTM_G_SINGLESEL,              
-                                             OPTM_G_GAP_DSWB0  + OPTM_G_SINGLESEL,                   
-                                             OPTM_G_GAP_DSWB1  + OPTM_G_SINGLESEL,                   
-                                             OPTM_G_GAP_DSWB2  + OPTM_G_SINGLESEL,                   
+                                             OPTM_G_GAP_DSWB0  + OPTM_G_SINGLESEL + OPTM_G_STDSEL,                  
+                                             OPTM_G_GAP_DSWB1  + OPTM_G_SINGLESEL + OPTM_G_STDSEL,                     
+                                             OPTM_G_GAP_DSWB2  + OPTM_G_SINGLESEL + OPTM_G_STDSEL,                            
                                              OPTM_G_GAP_DSWB3  + OPTM_G_SINGLESEL,                   
                                              OPTM_G_GAP_DSWB4  + OPTM_G_SINGLESEL,
                                              OPTM_G_GAP_DSWB5  + OPTM_G_SINGLESEL,
-                                             OPTM_G_GAP_DSWB6  + OPTM_G_SINGLESEL,  
-                                             OPTM_G_GAP_DSWB7  + OPTM_G_SINGLESEL,                                    
-                                             OPTM_G_LINE,                                             -- Line
-                                             OPTM_G_CLOSE + OPTM_G_SUBMENU,                           -- Close submenu / back to main menu
-											 OPTM_G_LINE,                                             -- Line
-											 OPTM_G_CLOSE                                             -- Close Menu
+                                             OPTM_G_GAP_DSWB6  + OPTM_G_SINGLESEL,
+                                             OPTM_G_GAP_DSWB7  + OPTM_G_SINGLESEL,                           
+                                             OPTM_G_LINE,
+                                             OPTM_G_CLOSE + OPTM_G_SUBMENU,
+											 OPTM_G_LINE,
+											 OPTM_G_CLOSE 
 											 );
 
 

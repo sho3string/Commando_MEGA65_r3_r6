@@ -5,6 +5,7 @@
 
 module jtcommnd_game(
     input             rst,
+    input             prog_clk,
     input             clk,
 
     // Clock enables
@@ -72,6 +73,7 @@ module jtcommnd_game(
     input             scr_ok,
 
     // PROM programming
+    input      prog_we,
     input      [21:0] prog_addr,
     input      [7:0]  prog_data,
 
@@ -107,12 +109,19 @@ wire [7:0] main_ram;
 reg  [5:0] prom_sel;
 
 wire LHBL_obj, LVBL_obj;
-wire prom_1d = prom_sel[0];
+/*wire prom_1d = prom_sel[0];
 wire prom_2d = prom_sel[1];
 wire prom_3d = prom_sel[2];
 // wire prom_1h = prom_sel[3];
 // wire prom_6e = prom_sel[4];
-wire prom_6l = prom_sel[5];
+wire prom_6l = prom_sel[5];*/
+
+wire prom_1d = prog_we && prom_sel[0];
+wire prom_2d = prog_we && prom_sel[1];
+wire prom_3d = prog_we && prom_sel[2];
+// wire prom_1h = prog_we && prom_sel[3];
+// wire prom_6e = prog_we && prom_sel[4];
+wire prom_6l = prog_we && prom_sel[5];
 
 assign pxl2_cen = cen12;
 assign pxl_cen  = cen6;
@@ -144,6 +153,7 @@ end
 jtcommnd_main u_main(
     .rst        ( rst           ),
     .clk        ( clk           ),
+    .prog_clk   ( prog_clk      ),
     .cen6       ( cen6          ),
     .cen3       ( cen3          ),
     .cpu_cen    ( cpu_cen       ),

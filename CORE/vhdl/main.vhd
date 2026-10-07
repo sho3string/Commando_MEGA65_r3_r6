@@ -160,12 +160,9 @@ signal scr_ok            : std_logic;
 
 
 -- ROM download / PROM programming
-signal ioctl_addr  : std_logic_vector(25 downto 0);
 signal prog_addr   : std_logic_vector(25 downto 0);
 signal prog_data   : std_logic_vector(7 downto 0);
 signal prom_we     : std_logic;
-signal pre_addr    : std_logic_vector(25 downto 0);
-signal post_addr   : std_logic_vector(25 downto 0);
 signal shoot2_button1_n : std_logic := '1';
 signal shoot2_button2_n : std_logic := '1';
 signal pot1_val    : std_logic_vector(7 downto 0);
@@ -189,6 +186,21 @@ signal dn_scr_1_we   : std_logic;
 signal dn_scr_2_we   : std_logic;
 signal dn_scr_3_we   : std_logic;
 
+signal dl_main_off : std_logic_vector(25 downto 0);
+signal dl_snd_off  : std_logic_vector(25 downto 0);
+signal dl_char_off : std_logic_vector(25 downto 0);
+signal dl_obj_off  : std_logic_vector(25 downto 0);
+signal dl_scr_off  : std_logic_vector(25 downto 0);
+
+signal char_q0, char_q1 : std_logic_vector(7 downto 0);
+signal obj_q0,  obj_q1  : std_logic_vector(7 downto 0);
+signal scr_q0, scr_q1, scr_q2, scr_q3 : std_logic_vector(7 downto 0);
+
+signal main_addr_d : std_logic_vector(main_addr'range);
+signal snd_addr_d  : std_logic_vector(snd_addr'range);
+signal char_addr_d : std_logic_vector(char_addr'range);
+signal obj_addr_d  : std_logic_vector(obj_addr'range);
+signal scr_addr_d  : std_logic_vector(scr_addr'range);
 
 -- Offer some keyboard controls in addition to Joy 1 Controls
 constant m65_1          : integer := 56; --Player 1 Start
@@ -207,7 +219,6 @@ constant m65_capslock   : integer := 72; --Pause
 
 
 
-
 -- -------------------------------------------------------------------------
 -- Commando ROM download map
 -- -------------------------------------------------------------------------
@@ -222,85 +233,68 @@ constant C_ROM_END    : natural := 16#04C600#;
 
 
 
--- Object ROM download address after converting the physical graphics
--- layout into the layout expected by jtgng_objdraw.
-signal dl_obj_word : std_logic_vector(14 downto 0);
-
--- Scroll 1 ROM download address after converting the physical 16x16
--- graphics layout into the layout expected by jtexed_scr1.
-signal dl_scr1_word : std_logic_vector(14 downto 0);
-
 begin
 
     -- Core reset
     reset <= reset_soft_i or reset_hard_i;
     
-    cen_bus <= cen1p5 & cen3 & cen6 & cen12;
+    cen12  <= cen_bus(0);
+    cen6   <= cen_bus(1);
+    cen3   <= cen_bus(2);
+    cen1p5 <= cen_bus(3);
+
     video_ce_o <= cen6;
 
-    prog_addr <= '0' & dn_addr_i;
+    prog_addr <= std_logic_vector(resize(unsigned(dn_addr_i), prog_addr'length) - to_unsigned(C_PROM_START, prog_addr'length));
     prog_data <= dn_data_i;
+    prom_we <= dn_wr_i when unsigned(dn_addr_i) >= C_PROM_START and unsigned(dn_addr_i) < C_ROM_END else '0';
     
     dn_main_we <= dn_wr_i
        when unsigned(dn_addr_i) >= C_MAIN_START and
             unsigned(dn_addr_i) <  C_SND_START
        else '0';
 
-    dn_snd_we <= dn_wr_i
-       when unsigned(dn_addr_i) >= C_SND_START and
-            unsigned(dn_addr_i) <  C_CHAR_START
-       else '0';
+    dn_snd_we <= dn_wr_i when unsigned(dn_addr_i) >= C_SND_START and unsigned(dn_addr_i) <  C_CHAR_START else '0';
+    dn_char_lo_we <= dn_wr_i when unsigned(dn_addr_i) >= C_CHAR_START and unsigned(dn_addr_i) <  C_OBJ_START and dn_addr_i(0) = '0' else '0';
+    dn_char_hi_we <= dn_wr_i when unsigned(dn_addr_i) >= C_CHAR_START and unsigned(dn_addr_i) <  C_OBJ_START and dn_addr_i(0) = '1' else '0';
+    dn_obj_lo_we <= dn_wr_i when unsigned(dn_addr_i) >= C_OBJ_START and unsigned(dn_addr_i) <  C_SCR_START and dn_addr_i(0) = '0' else '0';
+    dn_obj_hi_we <= dn_wr_i when unsigned(dn_addr_i) >= C_OBJ_START and unsigned(dn_addr_i) <  C_SCR_START and dn_addr_i(0) = '1' else '0';
+    dn_scr_0_we <= dn_wr_i when unsigned(dn_addr_i) >= C_SCR_START and unsigned(dn_addr_i) <  C_PROM_START and dn_addr_i(1 downto 0) = "00" else '0';
+    dn_scr_1_we <= dn_wr_i when unsigned(dn_addr_i) >= C_SCR_START and unsigned(dn_addr_i) <  C_PROM_START and dn_addr_i(1 downto 0) = "01" else '0';
+    dn_scr_2_we <= dn_wr_i when unsigned(dn_addr_i) >= C_SCR_START and unsigned(dn_addr_i) <  C_PROM_START and dn_addr_i(1 downto 0) = "10" else '0';
+    dn_scr_3_we <= dn_wr_i when unsigned(dn_addr_i) >= C_SCR_START and unsigned(dn_addr_i) <  C_PROM_START and dn_addr_i(1 downto 0) = "11" else '0';
     
+       
+    dl_main_off <= std_logic_vector(unsigned('0' & dn_addr_i) - C_MAIN_START);
+    dl_snd_off  <= std_logic_vector(unsigned('0' & dn_addr_i) - C_SND_START);
+    dl_char_off <= std_logic_vector(unsigned('0' & dn_addr_i) - C_CHAR_START);
+    dl_obj_off  <= std_logic_vector(unsigned('0' & dn_addr_i) - C_OBJ_START);
+    dl_scr_off  <= std_logic_vector(unsigned('0' & dn_addr_i) - C_SCR_START);
+
+    -- Assemble JTFRAME wide ROM buses from byte lanes
+    char_data <= char_q1 & char_q0;
+    obj_data  <= obj_q1  & obj_q0;
+    scr_data  <= scr_q3 & scr_q2 & scr_q1 & scr_q0;
+
+
+    -- Synchronous BRAMs return the requested word one main clock later.
+    -- Hold *_ok low for the first cycle after an address change.
+    process(clk_main_i)
+    begin
+       if rising_edge(clk_main_i) then
+          main_ok <= '1' when main_addr = main_addr_d else '0';
+          snd_ok  <= '1' when snd_addr  = snd_addr_d  else '0';
+          char_ok <= '1' when char_addr = char_addr_d else '0';
+          obj_ok  <= '1' when obj_addr  = obj_addr_d  else '0';
+          scr_ok  <= '1' when scr_addr  = scr_addr_d  else '0';
     
-    dn_char_lo_we <= dn_wr_i
-       when unsigned(dn_addr_i) >= C_CHAR_START and
-            unsigned(dn_addr_i) <  C_OBJ_START and
-            dn_addr_i(0) = '0'
-       else '0';
-    
-    dn_char_hi_we <= dn_wr_i
-       when unsigned(dn_addr_i) >= C_CHAR_START and
-            unsigned(dn_addr_i) <  C_OBJ_START and
-            dn_addr_i(0) = '1'
-       else '0';
-    
-    
-    dn_obj_lo_we <= dn_wr_i
-       when unsigned(dn_addr_i) >= C_OBJ_START and
-            unsigned(dn_addr_i) <  C_SCR_START and
-            dn_addr_i(0) = '0'
-       else '0';
-    
-    dn_obj_hi_we <= dn_wr_i
-       when unsigned(dn_addr_i) >= C_OBJ_START and
-            unsigned(dn_addr_i) <  C_SCR_START and
-            dn_addr_i(0) = '1'
-       else '0';
-    
-    
-    dn_scr_0_we <= dn_wr_i
-       when unsigned(dn_addr_i) >= C_SCR_START and
-            unsigned(dn_addr_i) <  C_PROM_START and
-            dn_addr_i(1 downto 0) = "00"
-       else '0';
-    
-    dn_scr_1_we <= dn_wr_i
-       when unsigned(dn_addr_i) >= C_SCR_START and
-            unsigned(dn_addr_i) <  C_PROM_START and
-            dn_addr_i(1 downto 0) = "01"
-       else '0';
-    
-    dn_scr_2_we <= dn_wr_i
-       when unsigned(dn_addr_i) >= C_SCR_START and
-            unsigned(dn_addr_i) <  C_PROM_START and
-            dn_addr_i(1 downto 0) = "10"
-       else '0';
-    
-    dn_scr_3_we <= dn_wr_i
-       when unsigned(dn_addr_i) >= C_SCR_START and
-            unsigned(dn_addr_i) <  C_PROM_START and
-            dn_addr_i(1 downto 0) = "11"
-       else '0';
+          main_addr_d <= main_addr;
+          snd_addr_d  <= snd_addr;
+          char_addr_d <= char_addr;
+          obj_addr_d  <= obj_addr;
+          scr_addr_d  <= scr_addr;
+       end if;
+    end process;
     
  
     -- SW1
@@ -437,8 +431,7 @@ begin
        fave   => open,
        fworst => open
     );
-   
-   
+
 
     -- -------------------------------------------------------------------------
     -- Commando
@@ -449,6 +442,7 @@ begin
        -- Clock / reset
        rst         => reset,
        clk         => clk_main_i,
+       prog_clk    => dn_clk_i,
     
        -- Clock enables
        cen12       => cen12,
@@ -518,6 +512,7 @@ begin
        -- PROM programming
        prog_addr   => prog_addr(21 downto 0),
        prog_data   => prog_data,
+       prog_we     => prom_we,
 
        -- Layer enables
        gfx_en      => (others => '1'),
@@ -561,11 +556,240 @@ begin
     audio_right_o <= audio_mixed;
 
 
-   -- ----------------------------------------------------------------------
-   -- Exed Exes ROM BRAMs. Port A = 48 MHz core read, Port B = QNICE write.
-   -- Wide JTFRAME buses are assembled from byte lanes.
-   -- ----------------------------------------------------------------------
+    -- ----------------------------------------------------------------------
+    -- Commando ROM BRAMs
+    -- Port A = 48 MHz core read
+    -- Port B = QNICE download
+    -- ----------------------------------------------------------------------
     
+    -- Main CPU ROM
+    i_rom_main : entity work.dualport_2clk_ram
+    generic map (
+       ADDR_WIDTH => 17,
+       DATA_WIDTH => 8,
+       FALLING_A  => false,
+       FALLING_B  => true
+    )
+    port map (
+       clock_a   => clk_main_i,
+       address_a => main_addr,
+       data_a    => (others => '0'),
+       wren_a    => '0',
+       q_a       => main_data,
+    
+       clock_b   => dn_clk_i,
+       address_b => dl_main_off(16 downto 0),
+       data_b    => dn_data_i,
+       wren_b    => dn_main_we,
+       q_b       => open
+    );
+    
+    
+    -- Sound CPU ROM
+    i_rom_snd : entity work.dualport_2clk_ram
+    generic map (
+       ADDR_WIDTH => 15,
+       DATA_WIDTH => 8,
+       FALLING_A  => false,
+       FALLING_B  => true
+    )
+    port map (
+       clock_a   => clk_main_i,
+       address_a => snd_addr,
+       data_a    => (others => '0'),
+       wren_a    => '0',
+       q_a       => snd_data,
+    
+       clock_b   => dn_clk_i,
+       address_b => dl_snd_off(14 downto 0),
+       data_b    => dn_data_i,
+       wren_b    => dn_snd_we,
+       q_b       => open
+    );
+    
+    
+    -- Character ROM - low byte
+    i_rom_char_0 : entity work.dualport_2clk_ram
+    generic map (
+       ADDR_WIDTH => 13,
+       DATA_WIDTH => 8,
+       FALLING_A  => false,
+       FALLING_B  => true
+    )
+    port map (
+       clock_a   => clk_main_i,
+       address_a => char_addr,
+       data_a    => (others => '0'),
+       wren_a    => '0',
+       q_a       => char_q0,
+    
+       clock_b   => dn_clk_i,
+       address_b => dl_char_off(13 downto 1),
+       data_b    => dn_data_i,
+       wren_b    => dn_char_lo_we,
+       q_b       => open
+    );
+    
+    
+    -- Character ROM - high byte
+    i_rom_char_1 : entity work.dualport_2clk_ram
+    generic map (
+       ADDR_WIDTH => 13,
+       DATA_WIDTH => 8,
+       FALLING_A  => false,
+       FALLING_B  => true
+    )
+    port map (
+       clock_a   => clk_main_i,
+       address_a => char_addr,
+       data_a    => (others => '0'),
+       wren_a    => '0',
+       q_a       => char_q1,
+    
+       clock_b   => dn_clk_i,
+       address_b => dl_char_off(13 downto 1),
+       data_b    => dn_data_i,
+       wren_b    => dn_char_hi_we,
+       q_b       => open
+    );
+    
+    
+    -- Object ROM - low byte
+    i_rom_obj_0 : entity work.dualport_2clk_ram
+    generic map (
+       ADDR_WIDTH => 16,
+       DATA_WIDTH => 8,
+       FALLING_A  => false,
+       FALLING_B  => true
+    )
+    port map (
+       clock_a   => clk_main_i,
+       address_a => obj_addr,
+       data_a    => (others => '0'),
+       wren_a    => '0',
+       q_a       => obj_q0,
+    
+       clock_b   => dn_clk_i,
+       address_b => dl_obj_off(16 downto 1),
+       data_b    => dn_data_i,
+       wren_b    => dn_obj_lo_we,
+       q_b       => open
+    );
+    
+    
+    -- Object ROM - high byte
+    i_rom_obj_1 : entity work.dualport_2clk_ram
+    generic map (
+       ADDR_WIDTH => 16,
+       DATA_WIDTH => 8,
+       FALLING_A  => false,
+       FALLING_B  => true
+    )
+    port map (
+       clock_a   => clk_main_i,
+       address_a => obj_addr,
+       data_a    => (others => '0'),
+       wren_a    => '0',
+       q_a       => obj_q1,
+    
+       clock_b   => dn_clk_i,
+       address_b => dl_obj_off(16 downto 1),
+       data_b    => dn_data_i,
+       wren_b    => dn_obj_hi_we,
+       q_b       => open
+    );
+    
+    
+    -- Scroll ROM - byte 0
+    i_rom_scr_0 : entity work.dualport_2clk_ram
+    generic map (
+       ADDR_WIDTH => 15,
+       DATA_WIDTH => 8,
+       FALLING_A  => false,
+       FALLING_B  => true
+    )
+    port map (
+       clock_a   => clk_main_i,
+       address_a => scr_addr,
+       data_a    => (others => '0'),
+       wren_a    => '0',
+       q_a       => scr_q0,
+    
+       clock_b   => dn_clk_i,
+       address_b => dl_scr_off(16 downto 2),
+       data_b    => dn_data_i,
+       wren_b    => dn_scr_0_we,
+       q_b       => open
+    );
+    
+    
+    -- Scroll ROM - byte 1
+    i_rom_scr_1 : entity work.dualport_2clk_ram
+    generic map (
+       ADDR_WIDTH => 15,
+       DATA_WIDTH => 8,
+       FALLING_A  => false,
+       FALLING_B  => true
+    )
+    port map (
+       clock_a   => clk_main_i,
+       address_a => scr_addr,
+       data_a    => (others => '0'),
+       wren_a    => '0',
+       q_a       => scr_q1,
+    
+       clock_b   => dn_clk_i,
+       address_b => dl_scr_off(16 downto 2),
+       data_b    => dn_data_i,
+       wren_b    => dn_scr_1_we,
+       q_b       => open
+    );
+    
+    
+    -- Scroll ROM - byte 2
+    i_rom_scr_2 : entity work.dualport_2clk_ram
+    generic map (
+       ADDR_WIDTH => 15,
+       DATA_WIDTH => 8,
+       FALLING_A  => false,
+       FALLING_B  => true
+    )
+    port map (
+       clock_a   => clk_main_i,
+       address_a => scr_addr,
+       data_a    => (others => '0'),
+       wren_a    => '0',
+       q_a       => scr_q2,
+    
+       clock_b   => dn_clk_i,
+       address_b => dl_scr_off(16 downto 2),
+       data_b    => dn_data_i,
+       wren_b    => dn_scr_2_we,
+       q_b       => open
+    );
+    
+    
+    -- Scroll ROM - byte 3
+    i_rom_scr_3 : entity work.dualport_2clk_ram
+    generic map (
+       ADDR_WIDTH => 15,
+       DATA_WIDTH => 8,
+       FALLING_A  => false,
+       FALLING_B  => true
+    )
+    port map (
+       clock_a   => clk_main_i,
+       address_a => scr_addr,
+       data_a    => (others => '0'),
+       wren_a    => '0',
+       q_a       => scr_q3,
+    
+       clock_b   => dn_clk_i,
+       address_b => dl_scr_off(16 downto 2),
+       data_b    => dn_data_i,
+       wren_b    => dn_scr_3_we,
+       q_b       => open
+    );
 
      
    i_keyboard : entity work.keyboard
