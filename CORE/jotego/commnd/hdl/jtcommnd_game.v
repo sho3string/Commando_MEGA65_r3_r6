@@ -258,6 +258,7 @@ jtgng_video #(
 ) u_video(
     .rst        ( rst           ),
     .clk        ( clk           ),
+    .prog_clk   ( prog_clk      ),
     .cen12      ( cen12         ),
     .cen6       ( cen6          ),
     .cpu_AB     ( cpu_AB[10:0]  ),

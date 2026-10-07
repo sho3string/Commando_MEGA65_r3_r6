@@ -12,6 +12,7 @@
 module jtgng_colmix(
     input            rst,
     input            clk,
+    input            prog_clk,
     input            cen6 /* synthesis direct_enable = 1 */,
 
     // pixel input from generator modules
@@ -103,7 +104,7 @@ generate
 if( PALETTE_PROM==1) begin
     // palette is in PROM
 
-    jtframe_prom #(.AW(8),.DW(4),.SIMFILE(PALETTE_RED)) u_red(
+    /*jtframe_prom #(.AW(8),.DW(4),.SIMFILE(PALETTE_RED)) u_red(
         .clk    ( clk          ),
         .cen    ( 1'b1         ),
         .data   ( prom_din     ),
@@ -131,6 +132,38 @@ if( PALETTE_PROM==1) begin
         .wr_addr( prog_addr    ),
         .we     ( prom_blue_we ),
         .q      ( pal_blue     )
+    );*/
+    mega65_prom #(.AW(8), .DW(4)) u_red(
+    .clk      ( clk         ),
+    .cen      ( 1'b1        ),
+    .prog_clk ( prog_clk    ),
+    .data     ( prom_din    ),
+    .wr_addr  ( prog_addr   ),
+    .rd_addr  ( pixel_mux   ),
+    .we       ( prom_red_we ),
+    .q        ( pal_red     )
+    );
+    
+    mega65_prom #(.AW(8), .DW(4)) u_green(
+        .clk      ( clk           ),
+        .cen      ( 1'b1          ),
+        .prog_clk ( prog_clk      ),
+        .data     ( prom_din      ),
+        .wr_addr  ( prog_addr     ),
+        .rd_addr  ( pixel_mux     ),
+        .we       ( prom_green_we ),
+        .q        ( pal_green     )
+    );
+    
+    mega65_prom #(.AW(8), .DW(4)) u_blue(
+        .clk      ( clk          ),
+        .cen      ( 1'b1         ),
+        .prog_clk ( prog_clk     ),
+        .data     ( prom_din     ),
+        .wr_addr  ( prog_addr    ),
+        .rd_addr  ( pixel_mux    ),
+        .we       ( prom_blue_we ),
+        .q        ( pal_blue     )
     );
 
 end else begin

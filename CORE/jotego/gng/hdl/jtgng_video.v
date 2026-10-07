@@ -26,6 +26,7 @@ parameter [1:0] OBJ_PAL = 2'b01, // 01 for GnG, 10 for Commando
 ) (
     input               rst,
     input               clk,
+    input               prog_clk,
     input               cen12,
     input               cen6,
     input       [10:0]  cpu_AB,
@@ -226,6 +227,7 @@ jtgng_colmix #(
 )u_colmix (
     .rst          ( rst           ),
     .clk          ( clk           ),
+    .prog_clk     ( prog_clk      ),
     .cen6         ( cen6          ),
 
     .char_pxl     ( char_pxl      ),

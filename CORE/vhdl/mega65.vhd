@@ -516,7 +516,7 @@ begin
           VGA_HS         => video_hs,
           VGA_VS         => video_vs,
           VGA_DE         => video_de,
-          rotate_ccw     => video_flip,
+          rotate_ccw     => not video_flip,
           no_rotate      => '0',
           flip           => '0',
           FB_VBL         => '0',
